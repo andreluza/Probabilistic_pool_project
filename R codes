@@ -1,0 +1,66 @@
+## R codes to build a mechanistic null model
+
+########## null model (with sampling by prevalence)
+### example with two regional species pools
+pool <- list(matrix (runif (100), nrow=10, ncol=10),
+
+	matrix (runif (100), nrow=10, ncol=10)
+  
+  )
+
+### setting dimnames to each pool
+pool <- lapply (pool, function (i) {
+	dimnames (i) <- list(paste ("com", seq(1,10),sep=""), 
+			paste ("sp", seq(1,10), sep=""));i
+	})
+
+## creating a community
+local <- round (runif (10,2,10))
+names (local)<- paste ("com", seq(1,10),sep="")
+
+# number of null model’ runs
+nsamples <- 10
+
+# null model
+sampling_prevalence_NM <- function (pool, local,nsamples) {
+
+	sampling <- lapply (as.list(seq(1, nrow (pool))), function (k) ## over all lines
+              
+                   lapply (as.list(rep(1,nsamples)), function (i) ## over all interactions
+	
+  
+                         replicate(i,sample (pool[k,],local[k],prob=pool[k,]))
+                         
+                         )
+                  
+                  ) ## run the sampling by prevalence
+	
+	# obtaining only the sampled probabilities
+	result_list <- vector ("list")
+	result_list$probabilities <- lapply (sampling, function (i) do.call (cbind, i))
+	
+  # obtaining the random list of sampled species
+	result_list$species <- lapply (sampling, function (k) 
+	  	do.call (cbind, lapply (k, function (i) dimnames(i)[[1]])))
+      
+	# return results
+	return (result_list)
+  
+	}
+
+## apply the null model across all pools and communities
+nm_test<- lapply (pool, function (i) 
+
+	sampling_prevalence_NM (i,local=local,nsamples=nsamples)
+  
+  )
+
+### applying the null model output across all sites and simulations
+### this function calculates the difference between observed and pool richness (only considered as an example -- we considered functional diversity in the paper we are producing)
+test <- lapply (as.list(seq (1, length (nm_test))), function (j) # 
+	lapply (as.list (seq (1,length (local))), function (k) ### for each site
+	unlist (lapply (as.list (seq(1,nsamples)), function (i) ## and each simulation
+	sum(pool[[j]][k,])-sum(unlist(nm_test[[j]]$probabilities[[j]][,i]))))))# sum of probabilities in the pool (potential richness) minus sum of probabilities in local communities (observed richness)
+
+
+                
