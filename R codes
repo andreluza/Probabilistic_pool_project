@@ -58,9 +58,19 @@ nm_test<- lapply (pool, function (i)
 ### applying the null model output across all sites and simulations
 ### this function calculates the difference between observed and pool richness (only considered as an example -- we considered functional diversity in the paper we are producing)
 test <- lapply (as.list(seq (1, length (nm_test))), function (j) # 
-	lapply (as.list (seq (1,length (local))), function (k) ### for each site
-	unlist (lapply (as.list (seq(1,nsamples)), function (i) ## and each simulation
-	sum(pool[[j]][k,])-sum(unlist(nm_test[[j]]$probabilities[[j]][,i]))))))# sum of probabilities in the pool (potential richness) minus sum of probabilities in local communities (observed richness)
+	    
+	     lapply (as.list (seq (1,length (local))), function (k) ### for each site
+	
+	             unlist (lapply (as.list (seq(1,nsamples)), function (i) ## and each simulation
+		      
+	                   sum(pool[[j]][k,])-sum(unlist(nm_test[[j]]$probabilities[[j]][,i])))
+			   # sum of pool probabilities (potential richness) minus sum of probabilities in local communities (observed richness)
+			   
+			   )
+			   
+		     )
+			   
+	) 
 
 
                 
