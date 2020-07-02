@@ -1,2 +1,4 @@
 This repository hosts codes used to build a mechanistic null model with sampling by prevalence.
-More details in forthcoming publications.
+More details in forthcoming publications. By 'mechanistic' I mean a null model that maintains the ecological processes underlying data. 
+In this case, the null model sample species by their prevalence in a probabilistic regional pool (i.e., it tends to sort species with higher probability to be locally present). 
+The probabilistic pool can be assembled according to species dispersal ability, and site environmental suitability.
