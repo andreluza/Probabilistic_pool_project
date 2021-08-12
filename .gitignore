@@ -10,5 +10,4 @@ data/pool_data/ensemble
 data/pool_data/occ_all
 data/pool_data/ProbPool*
 data/pool_data/ProbPool*
-data/terr-ecoregions-TNC/
 data/traits/*.RData
