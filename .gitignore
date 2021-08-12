@@ -2,5 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
-data
+data/community_data/community_matrices_effort.RData
 output
+R/10_Matching_PoolLocalData.R
+data/pool_data/*.RData
+data/pool_data/ensemble
+data/pool_data/occ_all
+data/pool_data/ProbPool*
