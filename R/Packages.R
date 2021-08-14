@@ -44,6 +44,11 @@ require(rgeos)
 require(raster)
 
 
+library(rasterVis)
+library(rgdal)
+library(viridis)
+library("gridExtra")
+
 
 library(ggpubr)
 require(grid)
