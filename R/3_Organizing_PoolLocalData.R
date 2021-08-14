@@ -18,10 +18,11 @@ source ("R/Functions.R")
 # load occurrences        
 
 # get names of occ files
+# 'occ_all' can be download from here: 10.5281/zenodo.5201760
 list_occ <- list.files(here ("data","pool_data","occ_all"))
 # apply the raster function to them
 OCC <- lapply (list_occ, function (i) # for each tif
-	raster(here ("occ_all",i))) # create raster
+	raster(here ("data","pool_data","occ_all",i))) # create raster
 
 # stack occ rasters
 OCC <- stack (OCC)
@@ -31,7 +32,7 @@ names(OCC) <- gsub ("_", ".", names(OCC))
 
 #---------------------------------------# 
 # load ensemble        
-
+# the ensemble can be download from here: 10.5281/zenodo.5201760
 ensemble <- readRDS (here ("data","pool_data","ensemble", "prob.ensemble_ch_ts_sp.rds"))
 ensemble <- ensemble [[order (names(ensemble))]]
 
@@ -58,10 +59,7 @@ OCC4 <- lapply (OCC3, function (i)  {i [is.nan (values(i))] <- 0; i})
 OCC4 <- lapply (OCC4, function (i)  {i [which (values(i)>0)] <- 1; i})
 OCC4 <- stack (OCC4)
 
-# save(OCC4,file = here ("output", "occ_data_2_x_2_cellsize.RData"))
-# load(here ("output","occ_data_2_x_2_cellsize.RData"))
-
-# decrease resolution of ensemble too
+# decrease the resolution of ensemble too (2x2 degree cell size)
 ENV2 <- ENV2 [[which (names (ENV2) %in%  gsub("_",".",imputed_traits_mean$species))]]
 ENV3 <- lapply (unstack(ENV2), function (i) aggregate (i, fact=4, fun=mean))
 
@@ -72,9 +70,7 @@ ENV4 <- lapply (ENV3, function (i)  {i [is.na (values(i))] <- 0; i})
 ENV4 <- lapply (ENV4,  function (i) resample (i, OCC4[[1]], method="bilinear"))
 ENV4 <- stack (ENV4)
 
-# save(ENV4,file = here ("output","env_pool_2_x_2_cellsize.RData"))
-# load(here ("output","env_pool_2_x_2_cellsize.RData"))
-
+# the way we calculate dispersal over time
 #exp(meters/year)/exp(gen_length)/1000*40/110
 # (((exp(11.07287)/1000)*40)/110) = 4.326889
 
@@ -141,22 +137,30 @@ lapply (probabilistic_pool, function (i)
 par (mfrow=c(1,1))
 
 # save probabilistic pool
-save (probabilistic_pool, file = here ("data","pool_data","probabilistic_pool.RData"))
+save (probabilistic_pool, file = here ("data","pool_data",
+                                       "probabilistic_pool.RData"))
 
-# write out these rasters
+# write out these rasters in the respective folder
+# species specific dispersal pool
+dir.create(here ("data", "pool_data","ProbPool_sp_specific"))
 writeRaster(probabilistic_pool[[1]],
 	here ("data","pool_data","ProbPool_sp_specific","ProbPool.tif"), 
 	bylayer=TRUE)
+# mean-dispersal ability pool
+dir.create(here ("data", "pool_data","ProbPool_mean"))
 writeRaster(probabilistic_pool[[2]],
 	here ("data","pool_data","ProbPool_mean","ProbPool.tif"), 
 	bylayer=TRUE)
+# half-degree dispersal ability pool
+dir.create(here ("data", "pool_data","ProbPool_05deg"))
 writeRaster(probabilistic_pool[[3]],
 	here ("data","pool_data","ProbPool_05deg","ProbPool.tif"), 
 	bylayer=TRUE)
+# one-degree dispersal ability pool
+dir.create(here ("data", "pool_data","ProbPool_1deg"))
 writeRaster(probabilistic_pool[[4]],
 	here ("data","pool_data","ProbPool_1deg","ProbPool.tif"), 
 	bylayer=TRUE)
-
 
 # save names
 sp_names <- names(probabilistic_pool[[1]])
@@ -228,7 +232,8 @@ site_list_1000<-lapply (extract_1000_traps, function (i)
 save (site_list_100,site_list_500,site_list_1000, 
       file=here ("data","pool_data","pool_probabilistico_add_especies.RData"))
 
-## ranks to present in the methods
+# proportion of species in each mammal order
+##  presented in the methods
 require(taxize)
 list_spp <-  gsub ("\\."," ",colnames (site_list_1000[[1]]))
 x <-  classification(list_spp,db = 'ncbi')
