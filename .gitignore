@@ -13,5 +13,4 @@ data/pool_data/ProbPool*
 data/traits/*.RData
 data/terr-ecoregions-TNC/
 output/*.RData
-output/*.tif
 output/figures
