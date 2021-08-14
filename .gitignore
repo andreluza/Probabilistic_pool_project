@@ -3,12 +3,13 @@
 .RData
 .Ruserdata
 data/community_data/community_matrices_effort.RData
-output
 R/10_Matching_PoolLocalData.R
 data/pool_data/*.RData
-data/pool_data/ensemble
-data/pool_data/occ_all
-data/pool_data/ProbPool*
+data/pool_data/ensemble/*.RDS
+data/pool_data/occ_all/*.tif
 data/pool_data/ProbPool*
 data/traits/*.RData
 data/terr-ecoregions-TNC/
+output/*.RData
+output/*.tif
+output/figures
