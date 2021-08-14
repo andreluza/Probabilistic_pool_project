@@ -1,6 +1,8 @@
 # --------------------- #
 ## load packages
 source ("R/Packages.R")
+source ("R/Functions.R")
+
 # ------------------------------ #
 # load trait data
 
@@ -22,7 +24,7 @@ names(probabilistic_pool) <- spp_names$x
 
 # functional diversity of the pool ( FD for each cell - WHOLE WORLD)
 ## niterations to sampling
-niterations <- 20 # total of 100
+niterations <- 100 # I advise you to do a toy example of 3 iterations
 LPSP_composition <- values (probabilistic_pool)
 
 # define the minimum number of species per site to be analyzed
@@ -79,7 +81,7 @@ mean_hypervolume_pool <-lapply (hypervolume_pool_obs, function (cell) # for each
 	rowMeans (matrix (unlist(lapply (cell, unlist)),ncol=niterations,byrow=T))) 
 # save
 save(hypervolume_pool_obs ,mean_hypervolume_pool,
-	file=here("output","mean_hypervolume_pool_more_more_more_twenty_iterations.RData")) 
+	file=here("output","mean_hypervolume_pool.RData")) 
 
 # Here I ran in several steps of 10 or 20 iterations
 # saving different files along the way 
@@ -87,7 +89,6 @@ save(hypervolume_pool_obs ,mean_hypervolume_pool,
 # open these steps
 list.FD <- list.files (here ("output"),
                        pattern = "mean_hypervolume_pool_*")
-
 # load into a list
 list_FD_Res <- lapply (list.FD, function (i) {
   
@@ -106,7 +107,8 @@ FD_res<-lapply(seq (1,nrow(list_FD_Res)), function (i)
 FD_res <- unlist(FD_res)
 
 # FD (previous map)
-FD_POOL <- raster (here("output","FD_pool_final.tif"))
+# this a raster created with a few iterations to have a basis for the complete map of FD
+FD_POOL <- raster (here("output","FD_pool_final.tif")) 
 FD_POOL[which(values(FD_POOL) >0 )] <- FD_res
 
 # map of FD
@@ -138,21 +140,6 @@ writeRaster(SR_pool,filename= here("output","SR_pool_final"),  # write it out
 
 load(here("data","community_data","community_matrices_effort.RData"))# load comm data
 load(here ("data","pool_data","pool_probabilistico_add_especies.RData")) # load pool data
-
-# the null model to be applied across comms
-sampling_prevalence_NM <- function (pool, local,nsamples){## 
-	sampling <- lapply (as.list(seq(1, nrow (pool))), function (k) ## over all sites
-	lapply (as.list(rep(1,nsamples)), function (i) ## replicate 1 x niter
-	replicate(i,sample (x=pool[k,],size=local[k],prob=pool[k,], replace=F)))) ## do the prevalence sampling
-	# obtain only the sampled probabilities
-	result_list <- vector ("list")
-	result_list$probabilities <- lapply (sampling, function (i) do.call (cbind, i))
-	# obtain the random list of sampled species
-	result_list$species <- lapply (sampling, function (k) do.call (cbind, lapply (k, function (i) dimnames(i)[[2]])))
-	# return results
-	return (result_list)
-}
-
 
 #########################
 # NULL MODEL AND HYPERVOLUME ANALYSIS
