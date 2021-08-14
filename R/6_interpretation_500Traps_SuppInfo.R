@@ -1,18 +1,13 @@
 # -----------------------------------------------
-## script interpretacao dos resultados
-## diferenca de riqueza entre o que poderia ser encontrado no pool e o que eh
-## observado nas comunidades locais (sem modelo nulo)
-## diferenca entre o hypervolume que poderia ser encontrado no pool e o que eh observado localmetne
-## Este script contém os codigos para sumarizar e comparar os dados observados e os gerados pelo modelo nulo
-
+## script for interpreting results
+# data using 500 trap nights
+# this script contains codes to produce Figs in Appendix S4 and S5
 
 ## load packages
 source ("R/Packages.R")
 
 # load community data
-# load("tabela_comunidades_fatores.RData")
 load(here ("data","community_data", "community_matrices_effort.RData"))
-# load("coordenadas.RData")
 
 # ----------------------------------------- #
 #                 DeltaSR
@@ -34,7 +29,6 @@ deltaSR_500 <- deltaSR_500[which(obsSR_500 >= min_spp)]
 
 # in a few cases deltaSR was lower than zero (likely due to species missing in the pool)
 # set these values to zero
-# table(deltaSR_100<0); table(deltaSR_500<0); table(deltaSR_500<0)
 deltaSR_500 [which (deltaSR_500 < 0)] <- 0
 
 # ----------------------------------------- #
@@ -653,5 +647,177 @@ grid.arrange(plot2b, plot3b,                               # global maps
 
 dev.off()
 
+# ---------------------------------------------------------------------------------- #
+# sensitivity analysis
+
+# cumulative density function of Supporting information ( Appendix S5 )
+# deltaSR
+# thresholds of deltaSR based on its range
+crit_deltaSR <- seq (range(data_to_analysis_500$deltaSR)[1], range(data_to_analysis_500$deltaSR)[2], 0.5)
+
+# obtain the number sites with  natural and modified states of modification
+# according to each threshold 
+delta_SR_crit <- lapply (crit_deltaSR, function (threshold) {
+  
+  (table (data_to_analysis_500$type [which (data_to_analysis_500$deltaSR >  threshold)]))#/length(lista_DF[[i]]$DeltaSR)
+  
+}
+)
+
+## deltaFD
+# thresholds of deltaFD
+crit_deltaFD <- seq (range(data_to_analysis_500$deltaFD)[1], range(data_to_analysis_500$deltaFD)[2], 0.05)
+
+# the number of natural and human modified habitats per threshold
+delta_FD_crit <- lapply (crit_deltaFD, function (threshold) {
+  
+  (table (data_to_analysis_500$type [which (data_to_analysis_500$deltaFD >  threshold)]))#/length(lista_DF[[i]]$DeltaFD)
+  
+}
+)
+
+# melt the list, resulting in the count of sites per threshold
+delta_SR_crit <- do.call (rbind , delta_SR_crit) # deltaSR
+delta_FD_crit <- do.call (rbind , delta_FD_crit) # deltaFD
+
+png(file=here("output","figures","CumDenFunc_FigS5_1_500T.png"), width=22, height=12, units="cm", res=600, family="serif")
+par(mfrow=c(1,2),mar=c(5,5,2,0.7))
+
+# plot of deltaSR  
+plot(NA, xlim=c(range(crit_deltaSR)[1], range(crit_deltaSR) [2]),ylim = c (0,300),
+     xlab = expression (paste ("Thresholds of ",Delta,"SR",sep="")),
+     ylab="Number of sites",cex.axis=1,cex.lab=1.4)
+
+# Lines of the number of sites
+lines (crit_deltaSR, delta_SR_crit[,2],pch=21,cex=1.2,col="blue",lwd=4) # natural
+lines (crit_deltaSR, delta_SR_crit[,1],pch=21,cex=1.2,col="red",lwd=4) # human-modified
+
+# plot of deltaFD
+plot(NA, xlim=c(range(crit_deltaFD)[1], range(crit_deltaFD) [2]),ylim = c (0,300),
+     xlab = expression (paste ("Thresholds of ",Delta,"FD"["SES"],sep="")),
+     ylab="",cex.axis=1,cex.lab=1.4)
+
+# lines of the number of sites
+lines (crit_deltaFD, delta_FD_crit[,2],pch=21,cex=1.2,col="blue",lwd=4) # natural
+lines (crit_deltaFD, delta_FD_crit[,1],pch=21,cex=1.2,col="red",lwd=4) # grassland
+
+legend ("topleft", c("Natural", "Human-modified"),
+        pch = c(19,19), col= c("blue", "red"),bty="n")
+# close file
+dev.off()
+
+# now insert a sampling component to equalize the number of sites per state of human modification  
+# cumulative density function
+
+# get the number of natural habitats
+how_many_to_get <- table(data_to_analysis_500$type)[2] # pegar o numero referente ao numero de huamn modifeid
+modified_habitats <- data_to_analysis_500 [which(data_to_analysis_500$type == "Human-modified"),] ## quantas florestas pegar, ja que tem muito mais floresta do que campo
+# forest sites ( as we have a lot of them)
+forest_sites_to_get <- data_to_analysis_500[which(data_to_analysis_500$hab_cut_edge == "forest.0.0.0"),]
+# number of grassland sites
+campos <- data_to_analysis_500 [which(data_to_analysis_500$hab_cut_edge == "grassland.0.0.0"),]
+
+# resampling
+resampling_sites <- lapply (seq(1,100), function (t) 
+  
+  sample (seq (1, nrow(forest_sites_to_get)),
+          nrow(modified_habitats)-nrow(campos),
+          replace=T)
+)
+
+# the same number of forest sites as the number of mod huabitats minus grassland sites  
+forest_sites_to_get_subset <- lapply (resampling_sites, function (k) 
+  
+  forest_sites_to_get [k,-1] # rm the first column - name is too long and it weights
+  
+)
+
+# bind datasets
+list_DF_ream  <- lapply (forest_sites_to_get_subset, function (k) 
+  
+  rbind(k, ## subset of forest sites 
+        campos[,-1], ## grassland sites # rm the first column - name is too long and it weights
+        modified_habitats[,-1]  ## modified sites # rm the first column - name is too long and it weights
+        
+  )
+)
+
+## deltaSR with this resampling component
+
+## the number of sites with deltaSR value higher than a given threshold, per random sample 
+delta_SR_crit_ream <- lapply (list_DF_ream, function (samp)
+  
+  lapply (crit_deltaSR, function (threshold) {
+    
+    (table (samp$type [which (samp$deltaSR >  threshold)]))
+    
+  }
+  )
+)
+
+## deltaFD
+## the number of sites with deltaFD value higher than a given threshold, per random sample 
+delta_FD_crit_ream <- lapply (list_DF_ream, function (samp)
+  
+  lapply (crit_deltaFD, function (limiar) {
+    
+    (table (samp$type [which (samp$deltaFD >  limiar)]))#/length(amostra$DeltaFD)
+    
+  }
+  )
+)
+
+
+# melt each list to plot 
+delta_SR_crit_ream <- lapply (delta_SR_crit_ream, function (k) do.call (rbind ,k ))
+delta_FD_crit_ream <- lapply (delta_FD_crit_ream, function (k) do.call (rbind , k))
+
+# plot it
+
+png(file=here ("output","figures", "CumDenFunc_uncert_FigS5_2_500T.png"), width=22, height=12, units="cm", res=600, family="serif")
+par(mfrow=c(1,2),mar=c(5,5,2,0.7))
+
+# empty plot  
+plot(NA, xlim=c(range(crit_deltaSR)[1], range(crit_deltaSR) [2]),ylim = c (0,170),
+     xlab = expression (paste ("Thresholds of ",Delta,"SR",sep="")),
+     ylab="Number of sites",cex.axis=1,cex.lab=1.4)
+
+# lines 
+# for each resampled dataset
+lapply (seq(1,length(delta_SR_crit_ream)), function (i){
+  
+  lines (crit_deltaSR,  delta_SR_crit_ream [[i]][,2],pch=21,cex=1.2,col="#80cdc1",lwd=1)# natural
+  lines (crit_deltaSR, delta_SR_crit_ream[[i]][,1],pch=21,cex=1.2,col="red",lwd=3) # human-modified
+}
+)
+# average line
+lines (crit_deltaSR,
+       rowMeans(do.call(cbind,lapply (delta_SR_crit_ream, function(i) i[,2]))),
+       lwd=3,col="blue")
+
+### delta FD
+plot(NA, xlim=c(range(crit_deltaFD)[1], range(crit_deltaFD) [2]),ylim = c (0,170),
+     xlab = expression (paste ("Thresholds of ",Delta,"FD"["SES"],sep="")),
+     ylab="",cex.axis=1,cex.lab=1.4)
+
+# lines 
+# for each resampled dataset
+lapply (seq(1,length(delta_FD_crit_ream)), function (i){
+  
+  lines (crit_deltaFD,  delta_FD_crit_ream [[i]][,2],pch=21,cex=1.2,col="#80cdc1",lwd=1)# natural
+  lines (crit_deltaFD, delta_FD_crit_ream[[i]][,1],pch=21,cex=1.2,col="red",lwd=3) # human-modified
+}
+)
+# average line  
+lines (crit_deltaFD,
+       rowMeans(do.call(cbind,lapply (delta_FD_crit_ream, function(i) i[,2]))),
+       lwd=3,col="blue")
+
+# legend
+legend ("topleft", c("Natural", "Human-modified"),
+        pch = c(19,19), col= c("blue", "red"),bty="n")
+# close figure
+dev.off()
 
 # end
+
