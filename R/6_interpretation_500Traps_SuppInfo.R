@@ -5,6 +5,7 @@
 
 ## load packages
 source ("R/Packages.R")
+source ("R/Functions.R")
 
 # load community data
 load(here ("data","community_data", "community_matrices_effort.RData"))
@@ -116,7 +117,6 @@ plot500$sp <- plot500$sp+
 plot500    
 dev.off()   
    
-
 # average values to report in the results
 # global average of deltaSR
 mean(data_to_analysis_500$deltaSR) 
@@ -371,12 +371,8 @@ with (data_to_analysis_500, chisq.test(IntStateBiome,
 # Figure 4
 
 # plotting
-require("rnaturalearth")
-require("rnaturalearthdata")
-
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
-require(ggplot2)
 # world map
 wm <- ggplot() + geom_sf (data=world, size = 0.1, 
                           fill="gray95", colour="gray95") +
@@ -430,14 +426,6 @@ wm_c_legend<-wm_b+theme(legend.position = "top",
 
 
 # capture the legend
-require(gridExtra)
-get_legend<-function(myggplot){
-  tmp <- ggplot_gtable(ggplot_build(myggplot))
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
-  legend <- tmp$grobs[[leg]]
-  return(legend)
-}
-
 common_legend <- get_legend(wm_c_legend) ## get the legend of a map with legend
 # remove legend of the first plot (we will show the legend in a composition of maps)
 wm_c<-wm_b+theme(plot.title=element_text(hjust=0.5,size=8,
@@ -510,9 +498,6 @@ wm_b2<-wm_b2+theme(plot.title=element_text(hjust=0.5,size=8,
 
 # ----------------------------------------
 # now we need to open global maps of non-volant small mammal species richness
-
-#setwd ("C:/Users/topoa/OneDrive/capII/trait_data")
-require(raster)
 # species richness
 SR_POOL <- raster (here ("output","SR_pool_final.tif"))
 # Functional diversity
@@ -545,13 +530,6 @@ FD_POOL[which(values(FD_POOL) >0 )] <- FD_res
 world <- ne_countries(scale = "medium", returnclass = "sf")
 masked_SR_POOL <- mask (SR_POOL,world)
 masked_FD_POOL <- mask (FD_POOL,world)
-
-#require("fasterize")
-#world_raster <- fasterize (world, masked_SR_POOL)
-
-library(rasterVis)
-library(rgdal)
-library(viridis)
 
 # POOL RICHNESS
 plot2 <- gplot(masked_SR_POOL) +
@@ -630,8 +608,6 @@ plot3b <- plot3 +   theme (axis.title = element_blank(),
 plot3b
 
 # arrange maps and scenarios
-
-library("gridExtra")
 
 pdf (here ("output","figures","fig4_500T.pdf"), width=7,height=4.5,family="serif")
 grid.arrange(plot2b, plot3b,                               # global maps
