@@ -1,10 +1,17 @@
+
+
 ##################################
 
 #       DISPERSAL DATA      
 # Imputing missing dispersal data 
 
 ##################################
-require(here)
+
+## load packages
+source ("R/Packages.R")
+source ("R/Functions.R")
+
+
 # load data taken from Pacifici et al. (2013), and Whitmee & Orme (2013)
 # 'incomplete' because there is a lot of NAs in Whitmee & Orme (2013) dispersal data
 disp_incomplete <- read.csv (here ("trait_data","disp_year.csv"),h=T,sep=";")
@@ -45,10 +52,11 @@ large <- disp_incomplete [which(disp_incomplete$species %in% disp_incomplete_sma
 # need to load occurrences and ensemble
 require(raster)
 # get names of occ files
-list_occ <- list.files(here ("occ_all"))
+# you can download 'occ_all' from here: 10.5281/zenodo.5201760
+list_occ <- list.files(here ("data","pool_data","occ_all"))
 # apply the raster function to them
 OCC <- lapply (list_occ, function (i) # for each tif
-        raster(here ("occ_all",i))) # create raster
+        raster(here ("data","pool_data","occ_all",i))) # create raster
 
 # stack occ rasters
 OCC <- stack (OCC)
@@ -94,6 +102,11 @@ cor_after <- cor.test (test4$ximp[,1],
 # PS: cor_after likely won't  be equal to the correlation reported in the MS
 # because of the iterative process of imputation
 
+# create a folder to host any result
+
+dir.create ("output")
+
+# save imputing result and comparison
 png(file=here ("output","imputing.png"), width=18, height=18, units="cm", res=600, family="serif")
 par (mfrow=c(2,2), family="serif")
 plot(disp_incomplete_small$body_mass, 
