@@ -8,7 +8,6 @@ data/pool_data/*.RData
 data/pool_data/*.rar
 data/pool_data/ensemble/*.RDS
 data/pool_data/occ_all/*.tif
-data/pool_data/occ_all/*.tif
 data/pool_data/ProbPool*
 data/traits/*.RData
 data/terr-ecoregions-TNC/
