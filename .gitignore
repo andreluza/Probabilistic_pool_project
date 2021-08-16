@@ -3,7 +3,6 @@
 .RData
 .Ruserdata
 data/community_data/community_matrices_effort.RData
-R/10_Matching_PoolLocalData.R
 data/pool_data/*.rar
 data/pool_data/*.RData
 data/pool_data/ensemble
