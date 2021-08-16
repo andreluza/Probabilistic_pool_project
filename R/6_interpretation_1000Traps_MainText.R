@@ -153,7 +153,7 @@ lm_1000_deltaFD_habitats <- (lm (deltaFD~hab_cut_edge,data=data_to_analysis_1000
 
 # aov object to run Tukey Honest Significance test
 summary (lm_1000_deltaSR_habitats_reaj <- (aov (deltaSR~hab_cut_edge-1,data=data_to_analysis_1000)))
-summary (lm_1000_deltaFD_habitats_reaj <- (aov (deltaFD~hab_cut_edge,data=data_to_analysis_1000)))
+summary (lm_1000_deltaFD_habitats_reaj <- (aov (deltaFD~hab_cut_edge-1,data=data_to_analysis_1000)))
 
 # run contrast test
 TukeyHSD (lm_1000_deltaSR_habitats_reaj, "hab_cut_edge", ordered=T)
@@ -170,8 +170,8 @@ nms <- sub("forest.0.0.0", "Forest", nms)
 nms <- sub("grassland.0.0.0", "Grassland", nms)
 nms <- sub("open.0.0.0", "Crop field", nms)
 nms <- sub("open.1.0.0", "Clear-cut", nms)
-nms <- sub("edge.0.0.0", "Forest edge", nms)
-nms <- sub("edge.0.1.0", "Grassland edge", nms)
+nms <- sub("edge.0.0.0", "Grassland edge", nms)
+nms <- sub("edge.0.1.0", "Forest edge", nms)
 nms <- sub("tree_plantation.0.0.0", "Tree plantation", nms)
 # datafarme with estimates  
 df <- data.frame(term     = rep(nms, 1),
@@ -223,8 +223,8 @@ nms <- sub("forest.0.0.0", "Forest", nms)
 nms <- sub("grassland.0.0.0", "Grassland", nms)
 nms <- sub("open.0.0.0", "Crop field", nms)
 nms <- sub("open.1.0.0", "Clear-cut", nms)
-nms <- sub("edge.0.0.0", "Forest edge", nms)
-nms <- sub("edge.0.1.0", "Grassland edge", nms)
+nms <- sub("edge.0.0.0", "Grassland edge", nms)
+nms <- sub("edge.0.1.0", "Forest edge", nms)
 nms <- sub("tree_plantation.0.0.0", "Tree plantation", nms)
 # datafarme with estimates  
 df <- data.frame(term     = rep(nms, 1),

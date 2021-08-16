@@ -168,8 +168,8 @@ nms <- sub("forest.0.0.0", "Forest", nms)
 nms <- sub("grassland.0.0.0", "Grassland", nms)
 nms <- sub("open.0.0.0", "Crop field", nms)
 nms <- sub("open.1.0.0", "Clear-cut", nms)
-nms <- sub("edge.0.0.0", "Forest edge", nms)
-nms <- sub("edge.0.1.0", "Grassland edge", nms)
+nms <- sub("edge.0.0.0", "Grassland edge", nms)
+nms <- sub("edge.0.1.0", "Forest edge", nms)
 nms <- sub("tree_plantation.0.0.0", "Tree plantation", nms)
 # datafarme with estimates  
 df <- data.frame(term     = rep(nms, 1),
@@ -221,8 +221,8 @@ nms <- sub("forest.0.0.0", "Forest", nms)
 nms <- sub("grassland.0.0.0", "Grassland", nms)
 nms <- sub("open.0.0.0", "Crop field", nms)
 nms <- sub("open.1.0.0", "Clear-cut", nms)
-nms <- sub("edge.0.0.0", "Forest edge", nms)
-nms <- sub("edge.0.1.0", "Grassland edge", nms)
+nms <- sub("edge.0.0.0", "Grassland edge", nms)
+nms <- sub("edge.0.1.0", "Forest edge", nms)
 nms <- sub("tree_plantation.0.0.0", "Tree plantation", nms)
 # datafarme with estimates  
 df <- data.frame(term     = rep(nms, 1),
