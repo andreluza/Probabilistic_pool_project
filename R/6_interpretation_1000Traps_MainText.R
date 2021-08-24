@@ -2,7 +2,7 @@
 ## script for interpreting results
 # data using 1000 trap nights
 # this script contains codes to produce Figs 2, 3 and 4 (presented in the main text)
-# and supporting information of appendix S5
+
 
 ## load packages
 source ("R/Packages.R")
@@ -504,31 +504,8 @@ wm_b2<-wm_b2+theme(plot.title=element_text(hjust=0.5,size=8,
 # species richness
 SR_POOL <- raster (here ("output","SR_pool_final.tif"))
 # Functional diversity
-# listing FD files (we ran hypervolume analysis in six different steps
-# because it is very demanding in terms of computation time and memory))
-list.FD <- list.files (here ("output"),
-                       pattern = "mean_hypervolume_pool_*")
-
-# load into a list
-list_FD_Res <- lapply (list.FD, function (i) {
-  
-  load(here ("output", i))
-  res <-  do.call(rbind,hypervolume_pool_obs)
-  
-})
-
-# melt and cbind
-list_FD_Res <- do.call(cbind,list_FD_Res)
-# mean functional hypervolume per cell
-FD_res<-lapply(seq (1,nrow(list_FD_Res)), function (i)
-    mean(unlist(list_FD_Res[i,]))
-)
-# melt
-FD_res <- unlist(FD_res)
-
-# FD (previous map)
 FD_POOL <- raster (here("output","FD_pool_final.tif"))
-FD_POOL[which(values(FD_POOL) >0 )] <- FD_res
+
 # world map to mask
 world <- ne_countries(scale = "medium", returnclass = "sf")
 masked_SR_POOL <- mask (SR_POOL,world)
@@ -612,7 +589,7 @@ plot3b
 
 # arrange maps and scenarios
 
-pdf (here ("output","figures","fig4.pdf"), width=7,height=4.5,family="serif")
+pdf (here ("output","figures","fig4.pdf"), width=7,height=4.5)
 grid.arrange(plot2b, plot3b,                               # global maps
              common_legend,
              plot1,plot1b,
