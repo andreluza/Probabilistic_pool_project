@@ -1,3 +1,9 @@
+#########################
+# FUNCTIONAL HYPERVOLUME
+# for datasets of 100, 500 and 1,000 trap-nights
+############################
+
+
 # --------------------- #
 ## load packages
 source ("R/Packages.R")
@@ -24,7 +30,7 @@ names(probabilistic_pool) <- spp_names$x
 
 # functional diversity of the pool ( FD for each cell - WHOLE WORLD)
 ## niterations to sampling
-niterations <- 100 # I advise you to do a toy example of 3 iterations
+niterations <- 3 # I advise you to do a toy example with 3 iterations
 LPSP_composition <- values (probabilistic_pool)
 
 # define the minimum number of species per site to be analyzed
@@ -79,6 +85,7 @@ stopCluster(cl)
 mean_hypervolume_pool <-lapply (hypervolume_pool_obs, function (cell) # for each cell
 	# calculate the mean pool hypervolume for each community (averaged across iterations)
 	rowMeans (matrix (unlist(lapply (cell, unlist)),ncol=niterations,byrow=T))) 
+
 # save
 save(hypervolume_pool_obs ,mean_hypervolume_pool,
 	file=here("output","mean_hypervolume_pool.RData")) 
@@ -86,7 +93,7 @@ save(hypervolume_pool_obs ,mean_hypervolume_pool,
 # Here I ran in several steps of 10 or 20 iterations
 # saving different files along the way 
 
-# open these steps
+# open these files saved at different steps
 list.FD <- list.files (here ("output"),
                        pattern = "mean_hypervolume_pool_*")
 # load into a list
@@ -106,18 +113,14 @@ FD_res<-lapply(seq (1,nrow(list_FD_Res)), function (i)
 # melt
 FD_res <- unlist(FD_res)
 
-# FD (previous map)
-# this a raster created with a few iterations to have a basis for the complete map of FD
-FD_POOL <- raster (here("output","FD_pool_final.tif")) 
-FD_POOL[which(values(FD_POOL) >0 )] <- FD_res
-
 # map of FD
-FD_POOL <- unlist(mean_hypervolume_pool)
+FD_POOL <- FD_res
 all_cells <- data.frame ( # cells with more than 5 spp
 	m5 = round (rowSums (LPSP_composition,na.rm=T))>=min_spp)
 # matching cells
 all_cells$hyper <- ifelse (all_cells$m5 == FALSE,
 		0,1)
+# which cells have => 5 spp
 all_cells$hyper[which(round (rowSums (LPSP_composition,na.rm=T))>=min_spp)] <- FD_POOL
 ## cf
 # which(all_cells$hyper > 0) == which (round (rowSums (LPSP_composition,na.rm=T))>=min_spp)
@@ -149,7 +152,7 @@ load(here ("data","pool_data","pool_probabilistico_add_especies.RData")) # load 
 local_100 <- rowSums (data_100_traps_var)
 # define the number of random samples per community
 # define null model
-nsamples <- 100 # the number of samples
+nsamples <- 3 # the number of samples
 
 ### run the null model to sort species from the pool (the same number of specis as observed in the local communities)
 
@@ -265,7 +268,7 @@ pool_obs <- lapply (pool_obs, function (i) i[,which (colnames(i) %in% rownames(t
 pool_obs <- lapply (pool_obs, function (i) apply (i, 1, list))
 
 # run null model with sampling by prevalence
-niterations <- 100
+niterations <- 3
 pool_sample <- replicate (niterations , lapply (seq(1,length (pool_obs)), function (pool) ## for each pool
 	lapply (seq(1,length (pool_obs[[1]])), function (comm) ## for each community
 	sample (pool_obs[[pool]][[comm]][[1]], size=round(sum(pool_obs[[pool]][[comm]][[1]])), 
@@ -299,50 +302,46 @@ save (hypervolume_pool_comm,mean_hypervolume_pool_comm,
 	 file=here ("output","hypervolumePOOL_100traps_observed.RData"))
 
 # bandwidths used to calculate the pool hypervolume
-cl <- makeCluster(6) ## number of cores = generally ncores -1
+cl <- makeCluster(7) ## number of cores = generally ncores -1
 clusterEvalQ(cl, library(hypervolume))
 # export your data and function
 clusterExport(cl, c("traits_pool"))
 
-bandwidths_pool_obs <- parLapply(cl, as.list(seq (1, length (traits_pool))), function (pool)# for each pool
-	lapply (seq(1, length (traits_pool[[1]])), function (sample)# for each sample
-	lapply (seq(1, 2), function (comm)# for each community ## length (traits_pool[[1]][[1]])
-      	hypervolume_gaussian (traits_pool[[pool]][[sample]][[comm]],
-			kde.bandwidth=estimate_bandwidth(traits_pool[[pool]][[sample]][[comm]],method="silverman"))@Parameters)))
-
+bandwidths_pool_obs <- parLapply(cl, traits_pool [[1]], function (sample)# for each sample
+  lapply (sample, function (comm)# for each community ##   
+    hypervolume_gaussian (comm,# estimate hypervolume
+                          kde.bandwidth=estimate_bandwidth(comm,method="silverman"))@Parameters))
 stopCluster(cl)
 
 # Other parameters important to report
-bandwidth_kde_pool<-lapply (bandwidths_pool_obs, function (pool)
-	lapply (seq (1, length (bandwidths_pool_obs [[1]])), function (sample) 
-	lapply (seq (1, length (bandwidths_pool_obs [[1]][[1]])), function (comm) 
-	pool[[sample]][[comm]]$kde.bandwidth)))
-
-matrix_bandwidth <- lapply (bandwidth_kde_pool, function (pool) # for each pool
-	# calculate the mean pool hypervolume for each community (averaged across iterations)
-	matrix (unlist(lapply (pool, unlist)),ncol=niterations,byrow=T))
-
-matrix_bandwidth <- lapply (lapply (bandwidth_kde_pool [[1]], unlist), matrix,ncol=6,nrow=niterations,byrow=T)
-
+bandwidth_kde_pool<-lapply (bandwidths_pool_obs, function (i) # each iteration
+  do.call(rbind, lapply (i, function (k)  # each community
+      k$kde.bandwidth)))
+bandwidth_kde_pool <- do.call(rbind,bandwidth_kde_pool)
 # mean bandwidths over samples
-lapply(matrix_bandwidth,colMeans) 
-lapply(matrix_bandwidth,function (i) apply(i,2,sd)) 
+apply(bandwidth_kde_pool,2,mean) 
+apply(bandwidth_kde_pool,2,sd) 
 
-## SD - nice value would be 3
-sd_count_pool <- lapply (bandwidths_pool_obs, function (pool)
-	lapply (seq (1, length (bandwidths_pool_obs [[1]])), function (sample) 
-	lapply (seq (1, length (bandwidths_pool_obs [[1]][[1]])), function (comm) 
-	pool[[sample]][[comm]]$sd.count)))
+## SD - ideal value would be 3
+sd_count_pool <- lapply(bandwidths_pool_obs, function (i)
+      
+                      lapply(i, function (k) 
+                          
+                          k$sd.count))
+  
+# ideal 3
+range(unlist(sd_count_pool))
 
 ## samples (shoots) per point
-sample_per_point_pool<- lapply (bandwidths_pool_obs, function (pool)
-	lapply (seq (1, length (bandwidths_pool_obs [[1]])), function (sample) 
-	lapply (seq (1, length (bandwidths_pool_obs [[1]][[1]])), function (comm) 
-	pool[[sample]][[comm]]$samples.per.point)))
-
+sample_per_point_pool<- lapply(bandwidths_pool_obs, function (i)
+  
+  do.call(rbind,lapply(i, function (k) 
+    
+    k$samples.per.point))
+)
 ## mean and sd per pool
-lapply(sample_per_point_pool, function (i) mean(unlist(i)))
-lapply(sample_per_point_pool, function (i) sd(unlist(i)))
+mean(do.call(cbind,sample_per_point_pool))
+sd(do.call(cbind,sample_per_point_pool))
 
 #save (bandwidths_pool, bandwidths_local, file="bandwidth_100.RData")
 
@@ -500,45 +499,43 @@ clusterEvalQ(cl, library(hypervolume))
 # export your data and function
 clusterExport(cl, c("traits_pool"))
 
-bandwidths_pool_obs <- parLapply(cl, as.list(seq (1, length (traits_pool))), function (pool)# for each pool
-	lapply (seq(1, length (traits_pool[[1]])), function (sample)# for each sample
-	lapply (seq(1, 2), function (comm)# for each community ## length (traits_pool[[1]][[1]])
-      	hypervolume_gaussian (traits_pool[[pool]][[sample]][[comm]],
-			kde.bandwidth=estimate_bandwidth(traits_pool[[pool]][[sample]][[comm]],method="silverman"))@Parameters)))
+bandwidths_pool_obs <- parLapply(cl, traits_pool [[1]], function (sample)# for each sample
+  lapply (sample, function (comm)# for each community ##   
+    hypervolume_gaussian (comm,# estimate hypervolume
+                          kde.bandwidth=estimate_bandwidth(comm,method="silverman"))@Parameters))
 
 stopCluster(cl)
 
 # Other parameters important to report
-bandwidth_kde_pool<-lapply (bandwidths_pool_obs, function (pool)
-	lapply (seq (1, length (bandwidths_pool_obs [[1]])), function (sample) 
-	lapply (seq (1, length (bandwidths_pool_obs [[1]][[1]])), function (comm) 
-	pool[[sample]][[comm]]$kde.bandwidth)))
-
-matrix_bandwidth <- lapply (bandwidth_kde_pool, function (pool) # for each pool
-	# calculate the mean pool hypervolume for each community (averaged across iterations)
-	matrix (unlist(lapply (pool, unlist)),ncol=niterations,byrow=T))
-
-matrix_bandwidth <- lapply (lapply (bandwidth_kde_pool [[1]], unlist), matrix,ncol=6,nrow=niterations,byrow=T)
-
+bandwidth_kde_pool<-lapply (bandwidths_pool_obs, function (i) # each iteration
+  do.call(rbind, lapply (i, function (k)  # each community
+    k$kde.bandwidth)))
+bandwidth_kde_pool <- do.call(rbind,bandwidth_kde_pool)
 # mean bandwidths over samples
-lapply(matrix_bandwidth,colMeans) 
-lapply(matrix_bandwidth,function (i) apply(i,2,sd)) 
+apply(bandwidth_kde_pool,2,mean) 
+apply(bandwidth_kde_pool,2,sd) 
 
-## SD - nice value would be 3
-sd_count_pool <- lapply (bandwidths_pool_obs, function (pool)
-	lapply (seq (1, length (bandwidths_pool_obs [[1]])), function (sample) 
-	lapply (seq (1, length (bandwidths_pool_obs [[1]][[1]])), function (comm) 
-	pool[[sample]][[comm]]$sd.count)))
+## SD - ideal value would be 3
+sd_count_pool <- lapply(bandwidths_pool_obs, function (i)
+  
+  lapply(i, function (k) 
+    
+    k$sd.count))
+
+# ideal 3
+range(unlist(sd_count_pool))
 
 ## samples (shoots) per point
-sample_per_point_pool<- lapply (bandwidths_pool_obs, function (pool)
-	lapply (seq (1, length (bandwidths_pool_obs [[1]])), function (sample) 
-	lapply (seq (1, length (bandwidths_pool_obs [[1]][[1]])), function (comm) 
-	pool[[sample]][[comm]]$samples.per.point)))
-
+sample_per_point_pool<- lapply(bandwidths_pool_obs, function (i)
+  
+  do.call(rbind,lapply(i, function (k) 
+    
+    k$samples.per.point))
+)
 ## mean and sd per pool
-lapply(sample_per_point_pool, function (i) mean(unlist(i)))
-lapply(sample_per_point_pool, function (i) sd(unlist(i)))
+mean(do.call(cbind,sample_per_point_pool))
+sd(do.call(cbind,sample_per_point_pool))
+
 
 #save (bandwidths_pool_obs, bandwidths_local_500, file="bandwidth_500.RData")
 
@@ -700,52 +697,47 @@ save (hypervolume_pool_comm_1000,
 	file=here ("output","hypervolumePOOL_1000traps_observed.RData"))
 
 # bandwidths used to calculate the pool hypervolume
-cl <- makeCluster(6) ## number of cores = generally ncores -1
+cl <- makeCluster(7) ## number of cores = generally ncores -1
 clusterEvalQ(cl, library(hypervolume))
 # export your data and function
 clusterExport(cl, c("traits_pool"))
 
-bandwidths_pool_1000 <- parLapply(cl, as.list(seq (1, length (traits_pool))), function (pool)# for each pool
-	lapply (seq(1, length (traits_pool[[1]])), function (sample)# for each sample
-	lapply (seq(1, 2), function (comm)# for each community ## length (traits_pool[[1]][[1]])
-      	hypervolume_gaussian (traits_pool[[pool]][[sample]][[comm]],
-			kde.bandwidth=estimate_bandwidth(traits_pool[[pool]][[sample]][[comm]],method="silverman"))@Parameters)))
+bandwidths_pool_1000 <- parLapply(cl, traits_pool [[1]], function (sample)# for each sample
+  lapply (sample, function (comm)# for each community ##   
+    hypervolume_gaussian (comm,# estimate hypervolume
+                          kde.bandwidth=estimate_bandwidth(comm,method="silverman"))@Parameters))
 
 stopCluster(cl)
 
 # Other parameters important to report
-bandwidth_kde_pool<-lapply (bandwidths_pool_obs, function (pool)
-	lapply (seq (1, length (bandwidths_pool_obs [[1]])), function (sample) 
-	lapply (seq (1, length (bandwidths_pool_obs [[1]][[1]])), function (comm) 
-	pool[[sample]][[comm]]$kde.bandwidth)))
-
-matrix_bandwidth <- lapply (bandwidth_kde_pool, function (pool) # for each pool
-	# calculate the mean pool hypervolume for each community (averaged across iterations)
-	matrix (unlist(lapply (pool, unlist)),ncol=niterations,byrow=T))
-
-matrix_bandwidth <- lapply (lapply (bandwidth_kde_pool [[1]], unlist), matrix,ncol=6,nrow=niterations,byrow=T)
-
+bandwidth_kde_pool<-lapply (bandwidths_pool_1000, function (i) # each iteration
+  do.call(rbind, lapply (i, function (k)  # each community
+    k$kde.bandwidth)))
+bandwidth_kde_pool <- do.call(rbind,bandwidth_kde_pool)
 # mean bandwidths over samples
-lapply(matrix_bandwidth,colMeans) 
-lapply(matrix_bandwidth,function (i) apply(i,2,sd)) 
+apply(bandwidth_kde_pool,2,mean) 
+apply(bandwidth_kde_pool,2,sd) 
 
-## SD - nice value would be 3
-sd_count_pool <- lapply (bandwidths_pool_obs, function (pool)
-	lapply (seq (1, length (bandwidths_pool_obs [[1]])), function (sample) 
-	lapply (seq (1, length (bandwidths_pool_obs [[1]][[1]])), function (comm) 
-	pool[[sample]][[comm]]$sd.count)))
+## SD - ideal value would be 3
+sd_count_pool <- lapply(bandwidths_pool_1000, function (i)
+  
+  lapply(i, function (k) 
+    
+    k$sd.count))
+
+# ideal 3
+range(unlist(sd_count_pool))
 
 ## samples (shoots) per point
-sample_per_point_pool<- lapply (bandwidths_pool_obs, function (pool)
-	lapply (seq (1, length (bandwidths_pool_obs [[1]])), function (sample) 
-	lapply (seq (1, length (bandwidths_pool_obs [[1]][[1]])), function (comm) 
-	pool[[sample]][[comm]]$samples.per.point)))
-
+sample_per_point_pool<- lapply(bandwidths_pool_1000, function (i)
+  
+  do.call(rbind,lapply(i, function (k) 
+    
+    k$samples.per.point))
+)
 ## mean and sd per pool
-lapply(sample_per_point_pool, function (i) mean(unlist(i)))
-lapply(sample_per_point_pool, function (i) sd(unlist(i)))
-
-save (bandwidth_pool_1000, bandwidth_local_1000, file="bandwidth_1000.RData")
+mean(do.call(cbind,sample_per_point_pool))
+sd(do.call(cbind,sample_per_point_pool))
 
 # end
 
