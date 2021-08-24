@@ -14,7 +14,7 @@ source ("R/Functions.R")
 
 # load data taken from Pacifici et al. (2013), and Whitmee & Orme (2013)
 # 'incomplete' because there is a lot of NAs in Whitmee & Orme (2013) dispersal data
-disp_incomplete <- read.csv (here ("trait_data","disp_year.csv"),h=T,sep=";")
+disp_incomplete <- read.csv (here ("data","traits","disp_year.csv"),h=T,sep=";")
 
 # replacing "_" by "." dot in species name (to match with occ)
 disp_incomplete$species<-gsub ("_",".",disp_incomplete$species)
@@ -50,7 +50,6 @@ large <- disp_incomplete [which(disp_incomplete$species %in% disp_incomplete_sma
 # -------------------------------------
 # get the names of small mammal spp
 # need to load occurrences and ensemble
-require(raster)
 # get names of occ files
 # you can download 'occ_all' from here: 10.5281/zenodo.5201760
 list_occ <- list.files(here ("data","pool_data","occ_all"))
@@ -67,7 +66,7 @@ names(OCC) <- gsub ("_", ".", names(OCC))
 #---------------------------------------# 
 # load ensemble        
 
-ensemble <- readRDS (here ("ensemble", "prob.ensemble_ch_ts_sp.rds"))
+ensemble <- readRDS (here ("data","pool_data","ensemble", "prob.ensemble_ch_ts_sp.rds"))
 ensemble <- ensemble [[order (names(ensemble))]]
 
 # matching occ and ensemble
@@ -102,13 +101,14 @@ cor_after <- cor.test (test4$ximp[,1],
 # PS: cor_after likely won't  be equal to the correlation reported in the MS
 # because of the iterative process of imputation
 
-# create a folder to host any result
+# create a folder to host the results
 
 dir.create ("output")
+dir.create (here ("output", "figures"))
 
 # save imputing result and comparison
-png(file=here ("output","imputing.png"), width=18, height=18, units="cm", res=600, family="serif")
-par (mfrow=c(2,2), family="serif")
+png(file=here ("output","figures","imputing_FigS1_1.png"), width=18, height=18, units="cm", res=600)
+par (mfrow=c(2,2))
 plot(disp_incomplete_small$body_mass, 
      disp_incomplete_small$dispersal, 
      pch=19,cex=0.5, xlab="Log adult body mass (g)", 
@@ -142,6 +142,14 @@ imputed_traits <- cbind(imputed_traits, species=disp_to_imput$species)
 require(doBy)
 imputed_traits_mean <- summaryBy (body_mass+gen_length+ dispersal ~species,imputed_traits, FUN=mean)
 imputed_traits_mean <- imputed_traits_mean [order (as.character(imputed_traits_mean$species), decreasing=F),]
+
+# mean value of dispersal to report in the results
+meters_year <- exp(imputed_traits_mean$dispersal.mean)/exp(imputed_traits_mean$gen_length)
+mean(meters_year)
+sd(meters_year)
+# range
+imputed_traits_mean[which(meters_year == min (meters_year)),]
+imputed_traits_mean[which(meters_year == max (meters_year)),]
 
 # subset to have data of species with occurrence/ensemble data
 imputed_traits_mean <- imputed_traits_mean [which (imputed_traits_mean$species %in% names(OCC2)),]
