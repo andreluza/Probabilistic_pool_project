@@ -1,3 +1,6 @@
+###################################
+# organization of community data
+###################################
 
 ## load packages
 source ("R/Packages.R")
