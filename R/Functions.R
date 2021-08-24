@@ -2,7 +2,7 @@
 ## logic function
 `%notin%` <- function(x,y) !(x %in% y)
 
-# the null model to be applied across comms
+# the null model to be applied across communities
 sampling_prevalence_NM <- function (pool, local,nsamples){## 
   sampling <- lapply (as.list(seq(1, nrow (pool))), function (k) ## over all sites
     lapply (as.list(rep(1,nsamples)), function (i) ## replicate 1 x niter
