@@ -3,12 +3,11 @@
 .RData
 .Ruserdata
 data/community_data/community_matrices_effort.RData
-data/pool_data/*.rar
 data/pool_data/*.RData
 data/pool_data/ensemble
 data/pool_data/occ_all
 data/pool_data/ProbPool*
 data/traits/*.RData
-data/terr-ecoregions-TNC/
+data/terr-ecoregions-TNC
 output/*.RData
 output/figures
