@@ -77,6 +77,7 @@ ENV4 <- stack (ENV4)
 # calculate spp dispersal ability
 # dispersal in lat long degrees, over 40 years
 meters_year <- exp(imputed_traits_mean$dispersal.mean)/exp(imputed_traits_mean$gen_length)
+
 # into km 
 km_year <- meters_year/1000
 # km in 40 years
@@ -142,7 +143,7 @@ save (probabilistic_pool, file = here ("data","pool_data",
 
 # write out these rasters in the respective folder
 # species specific dispersal pool
-dir.create(here ("data", "pool_data","ProbPool_sp_specific"))
+dir.create(here ("data", "pool_data","ProbPool_sp_specificb"))
 writeRaster(probabilistic_pool[[1]],
 	here ("data","pool_data","ProbPool_sp_specific","ProbPool.tif"), 
 	bylayer=TRUE)
