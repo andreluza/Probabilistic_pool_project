@@ -50,6 +50,7 @@ traits <- subset (traits_complete,
 traits$ForStrat_Value<-as.numeric (traits$ForStrat_Value)
 rownames (traits)<-traits$binomial
 
+# elton traits not used
 # select trait we will use in hypervolume analysis
 sel_cols <- c("Body.mass.g","LitSz","GestLen.d","WeanAge.d","SMA.d",       
               "PopDen.n.km2")
